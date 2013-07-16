@@ -15,20 +15,18 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import java.io.IOException;
-import java.util.UUID;
-
-import org.jboss.netty.channel.Channel;
-
 import com.corundumstudio.socketio.MessageHandler;
 import com.corundumstudio.socketio.parser.Packet;
+import org.jboss.netty.channel.Channel;
+
+import java.io.IOException;
 
 public class WebSocketPacketMessage extends BaseMessage {
 
-    private final UUID sessionId;
+    private final String sessionId;
     private final Packet packet;
 
-    public WebSocketPacketMessage(UUID sessionId, Packet packet) {
+    public WebSocketPacketMessage(String sessionId, Packet packet) {
         super();
         this.sessionId = sessionId;
         this.packet = packet;
@@ -38,7 +36,7 @@ public class WebSocketPacketMessage extends BaseMessage {
         return packet;
     }
 
-    public UUID getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

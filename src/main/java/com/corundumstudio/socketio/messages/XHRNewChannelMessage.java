@@ -15,19 +15,17 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import java.io.IOException;
-import java.util.UUID;
-
+import com.corundumstudio.socketio.MessageHandler;
 import org.jboss.netty.channel.Channel;
 
-import com.corundumstudio.socketio.MessageHandler;
+import java.io.IOException;
 
 public class XHRNewChannelMessage extends BaseMessage {
 
-    private final UUID sessionId;
+    private final String sessionId;
     private final String origin;
 
-    public XHRNewChannelMessage(UUID sessionId, String origin) {
+    public XHRNewChannelMessage(String sessionId, String origin) {
         this.sessionId = sessionId;
         this.origin = origin;
     }
@@ -36,7 +34,7 @@ public class XHRNewChannelMessage extends BaseMessage {
         return origin;
     }
 
-    public UUID getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

@@ -15,23 +15,20 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.util.UUID;
-
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.Transport;
 import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.messages.XHRNewChannelMessage;
 import com.corundumstudio.socketio.messages.XHRPacketMessage;
 import com.corundumstudio.socketio.parser.Packet;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 
 public class XHRPollingClient extends BaseClient {
 
     private String origin;
 
-    public XHRPollingClient(AckManager ackManager, DisconnectableHub disconnectable, UUID sessionId, Transport transport) {
+    public XHRPollingClient(AckManager ackManager, DisconnectableHub disconnectable, String sessionId, Transport transport) {
         super(sessionId, ackManager, disconnectable, transport);
     }
 

@@ -15,16 +15,6 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.net.SocketAddress;
-import java.util.Collection;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.Transport;
@@ -32,6 +22,14 @@ import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+
+import java.net.SocketAddress;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Base class for main client.
@@ -47,12 +45,11 @@ public abstract class BaseClient {
 
     private final DisconnectableHub disconnectable;
     private final AckManager ackManager;
-    private final UUID sessionId;
+    private final String sessionId;
     private final Transport transport;
     private Channel channel;
 
-    public BaseClient(UUID sessionId, AckManager ackManager, DisconnectableHub disconnectable,
-            Transport transport) {
+    public BaseClient(String sessionId, AckManager ackManager, DisconnectableHub disconnectable, Transport transport) {
         this.sessionId = sessionId;
         this.ackManager = ackManager;
         this.disconnectable = disconnectable;
@@ -98,7 +95,7 @@ public abstract class BaseClient {
         return ackManager;
     }
 
-    public UUID getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

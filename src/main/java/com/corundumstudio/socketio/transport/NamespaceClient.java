@@ -15,16 +15,15 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.net.SocketAddress;
-import java.util.Collections;
-import java.util.UUID;
-
 import com.corundumstudio.socketio.AckCallback;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.Transport;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
+
+import java.net.SocketAddress;
+import java.util.Collections;
 
 public class NamespaceClient implements SocketIOClient {
 
@@ -128,7 +127,7 @@ public class NamespaceClient implements SocketIOClient {
     }
 
     @Override
-    public UUID getSessionId() {
+    public String getSessionId() {
         return baseClient.getSessionId();
     }
 

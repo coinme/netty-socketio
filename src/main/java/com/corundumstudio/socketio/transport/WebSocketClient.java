@@ -15,21 +15,18 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.util.UUID;
-
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.Transport;
 import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.messages.WebSocketPacketMessage;
 import com.corundumstudio.socketio.parser.Packet;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 
 public class WebSocketClient extends BaseClient {
 
     public WebSocketClient(Channel channel, AckManager ackManager,
-                            DisconnectableHub disconnectable, UUID sessionId,
+                            DisconnectableHub disconnectable, String sessionId,
                              Transport transport) {
         super(sessionId, ackManager, disconnectable, transport);
         setChannel(channel);

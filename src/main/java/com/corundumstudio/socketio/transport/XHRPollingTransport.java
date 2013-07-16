@@ -15,28 +15,6 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.SocketIOClient;
@@ -53,6 +31,21 @@ import com.corundumstudio.socketio.parser.PacketType;
 import com.corundumstudio.socketio.scheduler.CancelableScheduler;
 import com.corundumstudio.socketio.scheduler.SchedulerKey;
 import com.corundumstudio.socketio.scheduler.SchedulerKey.Type;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Sharable
 public class XHRPollingTransport extends BaseTransport {
@@ -61,8 +54,8 @@ public class XHRPollingTransport extends BaseTransport {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final Map<UUID, XHRPollingClient> sessionId2Client =
-                                                    new ConcurrentHashMap<UUID, XHRPollingClient>();
+    private final Map<String, XHRPollingClient> sessionId2Client =
+                                                    new ConcurrentHashMap<String, XHRPollingClient>();
     private final CancelableScheduler scheduler;
 
     private final AckManager ackManager;
@@ -100,7 +93,7 @@ public class XHRPollingTransport extends BaseTransport {
                                                                                 throws IOException {
         String[] parts = queryDecoder.getPath().split("/");
         if (parts.length > 3) {
-            UUID sessionId = UUID.fromString(parts[4]);
+            String sessionId = parts[4];
 
             String origin = req.getHeader(HttpHeaders.Names.ORIGIN);
             if (queryDecoder.getParameters().containsKey("disconnect")) {
@@ -119,7 +112,7 @@ public class XHRPollingTransport extends BaseTransport {
         }
     }
 
-    private void scheduleNoop(Channel channel, final UUID sessionId) {
+    private void scheduleNoop(Channel channel, final String sessionId) {
         SchedulerKey key = new SchedulerKey(Type.POLLING, sessionId);
         scheduler.cancel(key);
         scheduler.schedule(key, new Runnable() {
@@ -133,7 +126,7 @@ public class XHRPollingTransport extends BaseTransport {
         }, configuration.getPollingDuration(), TimeUnit.SECONDS);
     }
 
-    private void scheduleDisconnect(Channel channel, final UUID sessionId) {
+    private void scheduleDisconnect(Channel channel, final String sessionId) {
         final SchedulerKey key = new SchedulerKey(Type.CLOSE_TIMEOUT, sessionId);
         scheduler.cancel(key);
         ChannelFuture future = channel.getCloseFuture();
@@ -154,7 +147,7 @@ public class XHRPollingTransport extends BaseTransport {
         });
     }
 
-    private void onPost(UUID sessionId, Channel channel, String origin, ChannelBuffer content)
+    private void onPost(String sessionId, Channel channel, String origin, ChannelBuffer content)
                                                                                 throws IOException {
         XHRPollingClient client = sessionId2Client.get(sessionId);
         if (client == null) {
@@ -167,7 +160,7 @@ public class XHRPollingTransport extends BaseTransport {
         Channels.fireMessageReceived(channel, new PacketsMessage(client, content));
     }
 
-    private void onGet(UUID sessionId, Channel channel, String origin) {
+    private void onGet(String sessionId, Channel channel, String origin) {
         if (!authorizeHandler.isSessionAuthorized(sessionId)) {
             sendError(channel, origin, sessionId);
             return;
@@ -184,7 +177,7 @@ public class XHRPollingTransport extends BaseTransport {
         scheduleNoop(channel, sessionId);
     }
 
-    private XHRPollingClient createClient(String origin, Channel channel, UUID sessionId) {
+    private XHRPollingClient createClient(String origin, Channel channel, String sessionId) {
         XHRPollingClient client = new XHRPollingClient(ackManager, disconnectable, sessionId, Transport.XHRPOLLING);
 
         sessionId2Client.put(sessionId, client);
@@ -195,7 +188,7 @@ public class XHRPollingTransport extends BaseTransport {
         return client;
     }
 
-    private void sendError(Channel channel, String origin, UUID sessionId) {
+    private void sendError(Channel channel, String origin, String sessionId) {
         log.debug("Client with sessionId: {} was not found! Reconnect error response sended", sessionId);
         Packet packet = new Packet(PacketType.ERROR);
         packet.setReason(ErrorReason.CLIENT_NOT_HANDSHAKEN);
@@ -206,7 +199,7 @@ public class XHRPollingTransport extends BaseTransport {
     @Override
     public void onDisconnect(BaseClient client) {
         if (client instanceof XHRPollingClient) {
-            UUID sessionId = client.getSessionId();
+            String sessionId = client.getSessionId();
 
             sessionId2Client.remove(sessionId);
             SchedulerKey noopKey = new SchedulerKey(Type.POLLING, sessionId);

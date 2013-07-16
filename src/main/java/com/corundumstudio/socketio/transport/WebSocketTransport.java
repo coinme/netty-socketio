@@ -15,20 +15,13 @@
  */
 package com.corundumstudio.socketio.transport;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.corundumstudio.socketio.*;
+import com.corundumstudio.socketio.ack.AckManager;
+import com.corundumstudio.socketio.handler.AuthorizeHandler;
+import com.corundumstudio.socketio.messages.PacketsMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
@@ -39,14 +32,10 @@ import org.jboss.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFa
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.corundumstudio.socketio.DisconnectableHub;
-import com.corundumstudio.socketio.HeartbeatHandler;
-import com.corundumstudio.socketio.SocketIOClient;
-import com.corundumstudio.socketio.SocketIOPipelineFactory;
-import com.corundumstudio.socketio.Transport;
-import com.corundumstudio.socketio.ack.AckManager;
-import com.corundumstudio.socketio.handler.AuthorizeHandler;
-import com.corundumstudio.socketio.messages.PacketsMessage;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Sharable
 public class WebSocketTransport extends BaseTransport {
@@ -55,7 +44,7 @@ public class WebSocketTransport extends BaseTransport {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final Map<UUID, WebSocketClient> sessionId2Client = new ConcurrentHashMap<UUID, WebSocketClient>();
+    private final Map<String, WebSocketClient> sessionId2Client = new ConcurrentHashMap<String, WebSocketClient>();
     private final Map<Integer, WebSocketClient> channelId2Client = new ConcurrentHashMap<Integer, WebSocketClient>();
 
     private final AckManager ackManager;
@@ -119,7 +108,7 @@ public class WebSocketTransport extends BaseTransport {
             return;
         }
 
-        UUID sessionId = UUID.fromString(parts[4]);
+        String sessionId = parts[4];
 
         WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(
                 getWebSocketLocation(req), null, false);
@@ -137,7 +126,7 @@ public class WebSocketTransport extends BaseTransport {
         Channels.fireMessageReceived(ctx.getChannel(), new PacketsMessage(client, channelBuffer));
     }
 
-    private void connectClient(Channel channel, UUID sessionId) {
+    private void connectClient(Channel channel, String sessionId) {
         if (!authorizeHandler.isSessionAuthorized(sessionId)) {
             log.warn("Unauthorized client with sessionId: {}, from ip: {}. Channel closed!", new Object[] {
                     sessionId, channel.getRemoteAddress()});

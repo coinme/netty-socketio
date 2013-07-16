@@ -15,28 +15,14 @@
  */
 package com.corundumstudio.socketio;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.KEEP_ALIVE;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
-import java.io.IOException;
-import java.util.Queue;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.corundumstudio.socketio.messages.*;
+import com.corundumstudio.socketio.parser.Encoder;
+import com.corundumstudio.socketio.parser.Packet;
+import com.corundumstudio.socketio.transport.BaseClient;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -47,17 +33,17 @@ import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.corundumstudio.socketio.messages.AuthorizeMessage;
-import com.corundumstudio.socketio.messages.BaseMessage;
-import com.corundumstudio.socketio.messages.WebSocketPacketMessage;
-import com.corundumstudio.socketio.messages.WebsocketErrorMessage;
-import com.corundumstudio.socketio.messages.XHRErrorMessage;
-import com.corundumstudio.socketio.messages.XHRNewChannelMessage;
-import com.corundumstudio.socketio.messages.XHRPacketMessage;
-import com.corundumstudio.socketio.messages.XHROutMessage;
-import com.corundumstudio.socketio.parser.Encoder;
-import com.corundumstudio.socketio.parser.Packet;
-import com.corundumstudio.socketio.transport.BaseClient;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.KEEP_ALIVE;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 @Sharable
 public class SocketIOEncoder extends SimpleChannelDownstreamHandler implements MessageHandler, Disconnectable {
@@ -92,14 +78,14 @@ public class SocketIOEncoder extends SimpleChannelDownstreamHandler implements M
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final ConcurrentMap<UUID, XHRClientEntry> sessionId2ActiveChannelId = new ConcurrentHashMap<UUID, XHRClientEntry>();
+    private final ConcurrentMap<String, XHRClientEntry> sessionId2ActiveChannelId = new ConcurrentHashMap<String, XHRClientEntry>();
     private final Encoder encoder;
 
     public SocketIOEncoder(Encoder encoder) {
         this.encoder = encoder;
     }
 
-    private XHRClientEntry getXHRClientEntry(Channel channel, UUID sessionId) {
+    private XHRClientEntry getXHRClientEntry(Channel channel, String sessionId) {
         XHRClientEntry clientEntry = sessionId2ActiveChannelId.get(sessionId);
         if (clientEntry == null) {
             clientEntry = new XHRClientEntry();
@@ -111,7 +97,7 @@ public class SocketIOEncoder extends SimpleChannelDownstreamHandler implements M
         return clientEntry;
     }
 
-    private void write(UUID sessionId, String origin, XHRClientEntry clientEntry,
+    private void write(String sessionId, String origin, XHRClientEntry clientEntry,
             Channel channel) throws IOException {
         if (!channel.isConnected() || clientEntry.getPackets().isEmpty()
                     || !clientEntry.tryToWrite(channel)) {
@@ -122,7 +108,7 @@ public class SocketIOEncoder extends SimpleChannelDownstreamHandler implements M
         sendMessage(origin, sessionId, channel, message);
     }
 
-    private void sendMessage(String origin, UUID sessionId, Channel channel,
+    private void sendMessage(String origin, String sessionId, Channel channel,
             ChannelBuffer message) {
         HttpResponse res = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
         addHeaders(origin, res);

@@ -15,18 +15,16 @@
  */
 package com.corundumstudio.socketio.parser;
 
-import java.io.IOException;
-import java.util.UUID;
-
+import com.corundumstudio.socketio.AckCallback;
+import com.corundumstudio.socketio.ack.AckManager;
+import com.corundumstudio.socketio.namespace.Namespace;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferIndexFinder;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.util.CharsetUtil;
 
-import com.corundumstudio.socketio.AckCallback;
-import com.corundumstudio.socketio.ack.AckManager;
-import com.corundumstudio.socketio.namespace.Namespace;
+import java.io.IOException;
 
 public class Decoder {
 
@@ -64,7 +62,7 @@ public class Decoder {
         return result;
     }
 
-    private Packet decodePacket(ChannelBuffer buffer, UUID uuid) throws IOException {
+    private Packet decodePacket(ChannelBuffer buffer, String uuid) throws IOException {
         if (buffer.readableBytes() < 3) {
             throw new DecoderException("Can't parse " + buffer.toString(CharsetUtil.UTF_8));
         }
@@ -240,11 +238,11 @@ public class Decoder {
         return PacketType.valueOf(typeId);
     }
 
-    public Packet decodePacket(String string, UUID uuid) throws IOException {
+    public Packet decodePacket(String string, String uuid) throws IOException {
         return decodePacket(ChannelBuffers.copiedBuffer(string, CharsetUtil.UTF_8), uuid);
     }
 
-    public Packet decodePackets(ChannelBuffer buffer, UUID uuid) throws IOException {
+    public Packet decodePackets(ChannelBuffer buffer, String uuid) throws IOException {
         if (isCurrentDelimiter(buffer, buffer.readerIndex())) {
             buffer.readerIndex(buffer.readerIndex() + Packet.DELIMITER_BYTES.length);
 

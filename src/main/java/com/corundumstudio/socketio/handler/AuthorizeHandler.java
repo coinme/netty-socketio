@@ -15,33 +15,6 @@
  */
 package com.corundumstudio.socketio.handler;
 
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.Disconnectable;
 import com.corundumstudio.socketio.SocketIOClient;
@@ -55,6 +28,20 @@ import com.corundumstudio.socketio.scheduler.CancelableScheduler;
 import com.corundumstudio.socketio.scheduler.SchedulerKey;
 import com.corundumstudio.socketio.scheduler.SchedulerKey.Type;
 import com.corundumstudio.socketio.transport.BaseClient;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.handler.codec.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 @Sharable
 public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Disconnectable {
@@ -62,7 +49,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final CancelableScheduler disconnectScheduler;
-    private final Set<UUID> authorizedSessionIds = new ConcurrentHashSet<UUID>();
+    private final Set<String> authorizedSessionIds = new ConcurrentHashSet<String>();
 
     private final String connectPath;
     private final Configuration configuration;
@@ -101,7 +88,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
 
     private void authorize(Channel channel, String origin, Map<String, List<String>> params)
             throws IOException {
-        final UUID sessionId = UUID.randomUUID();
+        final String sessionId = UUID.randomUUID().toString();
         authorizedSessionIds.add(sessionId);
 
         scheduleDisconnect(channel, sessionId);
@@ -123,7 +110,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
         log.debug("New sessionId: {} authorized", sessionId);
     }
 
-    private void scheduleDisconnect(Channel channel, final UUID sessionId) {
+    private void scheduleDisconnect(Channel channel, final String sessionId) {
         ChannelFuture future = channel.getCloseFuture();
         future.addListener(new ChannelFutureListener() {
             @Override
@@ -140,7 +127,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
         });
     }
 
-    public boolean isSessionAuthorized(UUID sessionId) {
+    public boolean isSessionAuthorized(String sessionId) {
         return authorizedSessionIds.contains(sessionId);
     }
 

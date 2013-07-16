@@ -15,17 +15,14 @@
  */
 package com.corundumstudio.socketio.parser;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.UUID;
-
-import mockit.Expectations;
-
+import com.corundumstudio.socketio.AckCallback;
 import com.fasterxml.jackson.core.JsonParseException;
+import mockit.Expectations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.corundumstudio.socketio.AckCallback;
+import java.io.IOException;
+import java.util.Arrays;
 
 public class DecoderAckPacketTest extends DecoderBaseTest {
 
@@ -49,7 +46,7 @@ public class DecoderAckPacketTest extends DecoderBaseTest {
 
     private void initExpectations() {
         new Expectations() {{
-            ackManager.getCallback((UUID)any, anyInt);
+            ackManager.getCallback((String)any, anyInt);
             result = new AckCallback<String>(String.class) {
                 @Override
                 public void onSuccess(String result) {
