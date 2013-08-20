@@ -37,7 +37,7 @@ import com.corundumstudio.socketio.transport.NamespaceClient;
 @Sharable
 public class PacketHandler extends SimpleChannelUpstreamHandler {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
     private final PacketListener packetListener;
     private final Decoder decoder;
@@ -58,9 +58,13 @@ public class PacketHandler extends SimpleChannelUpstreamHandler {
             PacketsMessage message = (PacketsMessage) msg;
             ChannelBuffer content = message.getContent();
             BaseClient client = message.getClient();
+            if (client == null) {
+                LOGGER.error("Null client in messageReceived. Disconnected?");
+                return;
+            }
 
-            if (log.isTraceEnabled()) {
-                log.trace("In message: {} sessionId: {}", new Object[] {content.toString(CharsetUtil.UTF_8), client.getSessionId()});
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("In message: {} sessionId: {}", new Object[]{content.toString(CharsetUtil.UTF_8), client.getSessionId()});
             }
             while (content.readable()) {
                 try {
@@ -71,7 +75,7 @@ public class PacketHandler extends SimpleChannelUpstreamHandler {
                     packetListener.onPacket(packet, nClient);
                 } catch (Exception ex) {
                     String c = content.toString(CharsetUtil.UTF_8);
-                    log.error("Error during data processing. Client sessionId: " + client.getSessionId() + ", data: " + c, ex);
+                    LOGGER.error("Error during data processing. Client sessionId: " + client.getSessionId()  + ", data: " + c, ex);
                 }
             }
         } else {
@@ -81,7 +85,7 @@ public class PacketHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-        log.error("Exception occurs", e.getCause());
+        LOGGER.error("Exception occurs", e.getCause());
     }
 
 }
