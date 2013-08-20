@@ -19,7 +19,6 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.Disconnectable;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.messages.AuthorizeMessage;
-import com.corundumstudio.socketio.misc.ConcurrentHashSet;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.namespace.NamespacesHub;
 import com.corundumstudio.socketio.parser.Packet;
@@ -37,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -46,11 +44,12 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 @Sharable
 public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Disconnectable {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizeHandler.class);
 
     private final CancelableScheduler disconnectScheduler;
-    private final Set<String> authorizedSessionIds = new ConcurrentHashSet<String>();
 
+    // TODO: Implement this to be cluster aware
+    private final SessionAuthorizer authorizer = NullSessionAuthorizer.getInstance();
     private final String connectPath;
     private final Configuration configuration;
     private final NamespacesHub namespacesHub;
@@ -79,17 +78,24 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
             }
             if (queryDecoder.getPath().equals(connectPath)) {
                 String origin = req.getHeader(HttpHeaders.Names.ORIGIN);
-                authorize(channel, origin, queryDecoder.getParameters());
+                String sessionId = req.getHeader("sessionId");
+                authorize(channel, origin, sessionId, queryDecoder.getParameters());
                 return;
             }
         }
         ctx.sendUpstream(e);
     }
 
-    private void authorize(Channel channel, String origin, Map<String, List<String>> params)
+    private void authorize(Channel channel, String origin, String sessionId, Map<String, List<String>> params)
             throws IOException {
-        final String sessionId = UUID.randomUUID().toString();
-        authorizedSessionIds.add(sessionId);
+
+        if (sessionId != null) {
+            LOGGER.debug("Was provided sessionId! " + sessionId);
+        } else {
+            sessionId = UUID.randomUUID().toString();
+        }
+
+        authorizer.authorize(sessionId);
 
         scheduleDisconnect(channel, sessionId);
 
@@ -107,7 +113,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
         }
 
         channel.write(new AuthorizeMessage(msg, jsonpParam, origin, sessionId));
-        log.debug("New sessionId: {} authorized", sessionId);
+        LOGGER.debug("New sessionId: {} authorized", sessionId);
     }
 
     private void scheduleDisconnect(Channel channel, final String sessionId) {
@@ -119,8 +125,8 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
                 disconnectScheduler.schedule(key, new Runnable() {
                     @Override
                     public void run() {
-                        authorizedSessionIds.remove(sessionId);
-                        log.debug("Authorized sessionId: {} removed due to connection timeout", sessionId);
+                        authorizer.deauthorize(sessionId);
+                        LOGGER.debug("Authorized sessionId: {} removed due to connection timeout", sessionId);
                     }
                 }, configuration.getCloseTimeout(), TimeUnit.SECONDS);
             }
@@ -128,7 +134,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
     }
 
     public boolean isSessionAuthorized(String sessionId) {
-        return authorizedSessionIds.contains(sessionId);
+        return authorizer.isAuthorized(sessionId);
     }
 
     public void connect(BaseClient client) {
@@ -143,7 +149,7 @@ public class AuthorizeHandler extends SimpleChannelUpstreamHandler implements Di
 
     @Override
     public void onDisconnect(BaseClient client) {
-        authorizedSessionIds.remove(client.getSessionId());
+        authorizer.deauthorize(client.getSessionId());
     }
 
 }
