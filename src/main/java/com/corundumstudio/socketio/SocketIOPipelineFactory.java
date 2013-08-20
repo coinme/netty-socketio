@@ -15,26 +15,6 @@
  */
 package com.corundumstudio.socketio;
 
-import static org.jboss.netty.channel.Channels.pipeline;
-
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.Security;
-import java.util.Collection;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.handler.AuthorizeHandler;
 import com.corundumstudio.socketio.handler.PacketHandler;
@@ -46,11 +26,25 @@ import com.corundumstudio.socketio.parser.Decoder;
 import com.corundumstudio.socketio.parser.Encoder;
 import com.corundumstudio.socketio.parser.JsonSupport;
 import com.corundumstudio.socketio.scheduler.CancelableScheduler;
-import com.corundumstudio.socketio.transport.BaseClient;
-import com.corundumstudio.socketio.transport.FlashPolicyHandler;
-import com.corundumstudio.socketio.transport.FlashSocketTransport;
-import com.corundumstudio.socketio.transport.WebSocketTransport;
-import com.corundumstudio.socketio.transport.XHRPollingTransport;
+import com.corundumstudio.socketio.transport.*;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
+import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.ssl.SslHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.Security;
+import java.util.Collection;
+
+import static org.jboss.netty.channel.Channels.pipeline;
 
 public class SocketIOPipelineFactory implements ChannelPipelineFactory, DisconnectableHub {
 
@@ -188,7 +182,7 @@ public class SocketIOPipelineFactory implements ChannelPipelineFactory, Disconne
         flashSocketTransport.onDisconnect(client);
         authorizeHandler.onDisconnect(client);
         socketIOEncoder.onDisconnect(client);
-        log.debug("Client with sessionId: {} disconnected", client.getSessionId());
+        log.debug("Client with sessionId: {} disconnected", (client != null ? client.getSessionId() : " NULL "));
     }
 
     public void stop() {
