@@ -46,6 +46,7 @@ public class CancelableScheduler {
 
     public void cancel(SchedulerKey key) {
         Future<?> future = scheduledFutures.remove(key);
+
         if (future != null) {
             future.cancel(false);
         }
