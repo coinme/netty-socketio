@@ -15,6 +15,16 @@
  */
 package com.corundumstudio.socketio.transport;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+
+import java.net.SocketAddress;
+import java.util.Collection;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.Transport;
@@ -22,20 +32,12 @@ import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-
-import java.net.SocketAddress;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Base class for main client.
  *
- * Each main client can have multiple namespace clients, when all namespace
- * clients has disconnected then main client disconnects too.
+ * Each main client can have multiple namespace clients,
+ * when all namespace clients has disconnected then main client disconnects too.
  *
  *
  */
@@ -59,11 +61,11 @@ public abstract class BaseClient {
     public Transport getTransport() {
         return transport;
     }
-
+    
     public abstract ChannelFuture send(Packet packet);
 
     public void removeChildClient(SocketIOClient client) {
-        namespaceClients.remove((Namespace) client.getNamespace());
+        namespaceClients.remove((Namespace)client.getNamespace());
         if (namespaceClients.isEmpty()) {
             disconnectable.onDisconnect(this);
         }
@@ -100,7 +102,7 @@ public abstract class BaseClient {
     }
 
     public SocketAddress getRemoteAddress() {
-        return channel.getRemoteAddress();
+        return channel.remoteAddress();
     }
 
     public void disconnect() {

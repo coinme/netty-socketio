@@ -15,39 +15,19 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import com.corundumstudio.socketio.MessageHandler;
 import com.corundumstudio.socketio.parser.Packet;
-import org.jboss.netty.channel.Channel;
 
-import java.io.IOException;
+public class XHRPacketMessage extends HttpMessage {
 
-public class XHRPacketMessage extends BaseMessage {
-
-    private final String sessionId;
-    private final String origin;
     private final Packet packet;
 
     public XHRPacketMessage(String sessionId, String origin, Packet packet) {
-        this.sessionId = sessionId;
-        this.origin = origin;
+        super(origin, sessionId);
         this.packet = packet;
     }
 
     public Packet getPacket() {
         return packet;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    @Override
-    public void handleMessage(MessageHandler handler, Channel channel) throws IOException {
-        handler.handle(this, channel);
     }
 
 }

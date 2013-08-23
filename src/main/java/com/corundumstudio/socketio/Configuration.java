@@ -15,11 +15,9 @@
  */
 package com.corundumstudio.socketio;
 
-import java.io.InputStream;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import io.netty.handler.codec.TooLongFrameException;
 
-import org.jboss.netty.handler.codec.frame.TooLongFrameException;
+import java.io.InputStream;
 
 import com.corundumstudio.socketio.parser.JacksonJsonSupport;
 import com.corundumstudio.socketio.parser.JsonSupport;
@@ -32,8 +30,8 @@ public class Configuration {
 
     private String transports = join(new Transport[] {Transport.WEBSOCKET, Transport.FLASHSOCKET, Transport.XHRPOLLING});
 
-    private Executor bossExecutor = Executors.newCachedThreadPool();
-    private Executor workerExecutor = Executors.newCachedThreadPool();
+    private int bossThreads = 0; // 0 = current_processors_amount * 2
+    private int workerThreads = 0; // 0 = current_processors_amount * 2
 
     private boolean allowCustomRequests = false;
 
@@ -46,11 +44,14 @@ public class Configuration {
 
     private int maxHttpContentLength = 64 * 1024;
 
+    private String packagePrefix;
     private String hostname;
     private int port = -1;
 
     private InputStream keyStore;
     private String keyStorePassword;
+
+    private boolean preferDirectBuffer = true;
 
     private JsonSupport jsonSupport = new JacksonJsonSupport(this);
 
@@ -63,23 +64,32 @@ public class Configuration {
      * @param configuration - Configuration object to clone
      */
     Configuration(Configuration conf) {
-        setBossExecutor(conf.getBossExecutor());
+        setBossThreads(conf.getBossThreads());
+        setWorkerThreads(conf.getWorkerThreads());
+
         setCloseTimeout(conf.getCloseTimeout());
+
         setHeartbeatInterval(conf.getHeartbeatInterval());
         setHeartbeatThreadPoolSize(conf.getHeartbeatThreadPoolSize());
         setHeartbeatTimeout(conf.getHeartbeatTimeout());
+
         setHostname(conf.getHostname());
-        setJsonSupport(new JsonSupportWrapper(conf.getJsonSupport()));
         setPort(conf.getPort());
-        setWorkerExecutor(conf.getWorkerExecutor());
+
+        setJsonSupport(new JsonSupportWrapper(conf.getJsonSupport()));
+        setJsonTypeFieldName(conf.getJsonTypeFieldName());
         setContext(conf.getContext());
         setAllowCustomRequests(conf.isAllowCustomRequests());
         setPollingDuration(conf.getPollingDuration());
-        setJsonTypeFieldName(conf.getJsonTypeFieldName());
+
         setKeyStorePassword(conf.getKeyStorePassword());
         setKeyStore(conf.getKeyStore());
+
         setTransports(conf.getTransports());
         setMaxHttpContentLength(conf.getMaxHttpContentLength());
+        setPackagePrefix(conf.getPackagePrefix());
+
+        setPreferDirectBuffer(conf.isPreferDirectBuffer());
     }
 
     private String join(Transport[] transports) {
@@ -136,18 +146,18 @@ public class Configuration {
         this.port = port;
     }
 
-    public Executor getBossExecutor() {
-        return bossExecutor;
+    public int getBossThreads() {
+        return bossThreads;
     }
-    public void setBossExecutor(Executor bossExecutor) {
-        this.bossExecutor = bossExecutor;
+    public void setBossThreads(int bossThreads) {
+        this.bossThreads = bossThreads;
     }
 
-    public Executor getWorkerExecutor() {
-        return workerExecutor;
+    public int getWorkerThreads() {
+        return workerThreads;
     }
-    public void setWorkerExecutor(Executor workerExecutor) {
-        this.workerExecutor = workerExecutor;
+    public void setWorkerThreads(int workerThreads) {
+        this.workerThreads = workerThreads;
     }
 
     /**
@@ -220,8 +230,9 @@ public class Configuration {
      * Allow to service custom requests differs from socket.io protocol.
      * In this case it's necessary to add own handler which handle them
      * to avoid hang connections.
+     * Default is {@code false}
      *
-     * @param allowCustomRequests - true to allow
+     * @param allowCustomRequests - {@code true} to allow
      */
     public void setAllowCustomRequests(boolean allowCustomRequests) {
         this.allowCustomRequests = allowCustomRequests;
@@ -296,6 +307,39 @@ public class Configuration {
     }
     public String getTransports() {
         return transports;
+    }
+
+    /**
+     * Package prefix for sending json-object from client
+     * without full class name.
+     *
+     * With defined package prefix socket.io client
+     * just need to define '@class: 'SomeType'' in json object
+     * instead of '@class: 'com.full.package.name.SomeType''
+     *
+     * @param packagePrefix - prefix string
+     *
+     */
+    public void setPackagePrefix(String packagePrefix) {
+        this.packagePrefix = packagePrefix;
+    }
+    public String getPackagePrefix() {
+        return packagePrefix;
+    }
+
+    /**
+     * Buffer allocation method used during packet encoding.
+     * Default is {@code true}
+     *
+     * @param preferDirectBuffer    {@code true} if a direct buffer should be tried to be used as target for
+     *                              the encoded messages. If {@code false} is used it will allocate a heap
+     *                              buffer, which is backed by an byte array.
+     */
+    public void setPreferDirectBuffer(boolean preferDirectBuffer) {
+        this.preferDirectBuffer = preferDirectBuffer;
+    }
+    public boolean isPreferDirectBuffer() {
+        return preferDirectBuffer;
     }
 
 }

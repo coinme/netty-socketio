@@ -15,14 +15,17 @@
  */
 package com.corundumstudio.socketio.transport;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+
+import java.util.UUID;
+
 import com.corundumstudio.socketio.DisconnectableHub;
 import com.corundumstudio.socketio.Transport;
 import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.messages.XHRNewChannelMessage;
 import com.corundumstudio.socketio.messages.XHRPacketMessage;
 import com.corundumstudio.socketio.parser.Packet;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 
 public class XHRPollingClient extends BaseClient {
 
@@ -32,10 +35,10 @@ public class XHRPollingClient extends BaseClient {
         super(sessionId, ackManager, disconnectable, transport);
     }
 
-    public void update(Channel channel, String origin) {
+    public void bindChannel(Channel channel, String origin) {
         this.origin = origin;
         setChannel(channel);
-        channel.write(new XHRNewChannelMessage(getSessionId(), origin));
+        channel.write(new XHRNewChannelMessage(origin, getSessionId()));
     }
 
     public String getOrigin() {

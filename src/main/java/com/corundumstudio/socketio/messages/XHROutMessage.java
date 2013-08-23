@@ -15,25 +15,10 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import org.jboss.netty.channel.Channel;
+public class XHROutMessage extends HttpMessage {
 
-import com.corundumstudio.socketio.MessageHandler;
-
-public class XHROutMessage extends BaseMessage {
-
-    private final String origin;
-
-    public XHROutMessage(String origin) {
-        this.origin = origin;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
-
-    @Override
-    public void handleMessage(MessageHandler handler, Channel channel) {
-        handler.handle(this, channel);
+    public XHROutMessage(String origin, String sessionId) {
+        super(origin, sessionId);
     }
 
 }

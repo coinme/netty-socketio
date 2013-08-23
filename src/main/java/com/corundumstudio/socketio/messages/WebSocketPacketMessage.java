@@ -15,11 +15,9 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import com.corundumstudio.socketio.MessageHandler;
-import com.corundumstudio.socketio.parser.Packet;
-import org.jboss.netty.channel.Channel;
+import java.util.UUID;
 
-import java.io.IOException;
+import com.corundumstudio.socketio.parser.Packet;
 
 public class WebSocketPacketMessage extends BaseMessage {
 
@@ -38,11 +36,6 @@ public class WebSocketPacketMessage extends BaseMessage {
 
     public String getSessionId() {
         return sessionId;
-    }
-
-    @Override
-    public void handleMessage(MessageHandler handler, Channel channel) throws IOException {
-        handler.handle(this, channel);
     }
 
 }

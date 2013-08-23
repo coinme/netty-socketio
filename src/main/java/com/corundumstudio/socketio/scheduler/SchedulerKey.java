@@ -56,11 +56,4 @@ public class SchedulerKey {
         return true;
     }
 
-    public Type getType() {
-        return type;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
 }

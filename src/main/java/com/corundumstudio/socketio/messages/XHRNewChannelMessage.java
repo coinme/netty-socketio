@@ -15,32 +15,12 @@
  */
 package com.corundumstudio.socketio.messages;
 
-import com.corundumstudio.socketio.MessageHandler;
-import org.jboss.netty.channel.Channel;
+import java.util.UUID;
 
-import java.io.IOException;
+public class XHRNewChannelMessage extends HttpMessage {
 
-public class XHRNewChannelMessage extends BaseMessage {
-
-    private final String sessionId;
-    private final String origin;
-
-    public XHRNewChannelMessage(String sessionId, String origin) {
-        this.sessionId = sessionId;
-        this.origin = origin;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    @Override
-    public void handleMessage(MessageHandler handler, Channel channel) throws IOException {
-        handler.handle(this, channel);
+    public XHRNewChannelMessage(String origin, String sessionId) {
+        super(origin, sessionId);
     }
 
 }

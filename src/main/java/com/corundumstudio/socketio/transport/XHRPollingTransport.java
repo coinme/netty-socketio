@@ -31,13 +31,16 @@ import com.corundumstudio.socketio.parser.PacketType;
 import com.corundumstudio.socketio.scheduler.CancelableScheduler;
 import com.corundumstudio.socketio.scheduler.SchedulerKey;
 import com.corundumstudio.socketio.scheduler.SchedulerKey.Type;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,45 +77,45 @@ public class XHRPollingTransport extends BaseTransport {
         this.scheduler = scheduler;
     }
 
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        Object msg = e.getMessage();
-        if (msg instanceof HttpRequest) {
-            HttpRequest req = (HttpRequest) msg;
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg instanceof FullHttpRequest) {
+            FullHttpRequest req = (FullHttpRequest) msg;
             QueryStringDecoder queryDecoder = new QueryStringDecoder(req.getUri());
 
-            Channel channel = ctx.getChannel();
-            if (queryDecoder.getPath().startsWith(path)) {
-                handleMessage(req, queryDecoder, channel);
+            if (queryDecoder.path().startsWith(path)) {
+                handleMessage(req, queryDecoder, ctx);
+                req.release();
                 return;
             }
         }
-        ctx.sendUpstream(e);
+        ctx.fireChannelRead(msg);
     }
 
-    private void handleMessage(HttpRequest req, QueryStringDecoder queryDecoder, Channel channel)
+    private void handleMessage(FullHttpRequest req, QueryStringDecoder queryDecoder, ChannelHandlerContext ctx)
                                                                                 throws IOException {
-        String[] parts = queryDecoder.getPath().split("/");
+        String[] parts = queryDecoder.path().split("/");
         if (parts.length > 3) {
             String sessionId = parts[4];
 
-            String origin = req.getHeader(HttpHeaders.Names.ORIGIN);
-            if (queryDecoder.getParameters().containsKey("disconnect")) {
+            String origin = req.headers().get(HttpHeaders.Names.ORIGIN);
+            if (queryDecoder.parameters().containsKey("disconnect")) {
                 BaseClient client = sessionId2Client.get(sessionId);
                 client.onChannelDisconnect();
-                channel.write(new XHROutMessage(origin));
+                ctx.channel().write(new XHROutMessage(origin, sessionId));
             } else if (HttpMethod.POST.equals(req.getMethod())) {
-                onPost(sessionId, channel, origin, req.getContent());
+                onPost(sessionId, ctx, origin, req.content());
             } else if (HttpMethod.GET.equals(req.getMethod())) {
-                onGet(sessionId, channel, origin);
+                onGet(sessionId, ctx, origin);
             }
         } else {
             log.warn("Wrong {} method request path: {}, from ip: {}. Channel closed!",
-                    new Object[] {req.getMethod(), path, channel.getRemoteAddress()});
-            channel.close();
+                        req.getMethod(), path, ctx.channel().remoteAddress());
+            ctx.channel().close();
         }
     }
 
-    private void scheduleNoop(Channel channel, final String sessionId) {
+    private void scheduleNoop(final String sessionId) {
         SchedulerKey key = new SchedulerKey(Type.POLLING, sessionId);
         scheduler.cancel(key);
         scheduler.schedule(key, new Runnable() {
@@ -129,7 +132,7 @@ public class XHRPollingTransport extends BaseTransport {
     private void scheduleDisconnect(Channel channel, final String sessionId) {
         final SchedulerKey key = new SchedulerKey(Type.CLOSE_TIMEOUT, sessionId);
         scheduler.cancel(key);
-        ChannelFuture future = channel.getCloseFuture();
+        ChannelFuture future = channel.closeFuture();
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
@@ -147,53 +150,54 @@ public class XHRPollingTransport extends BaseTransport {
         });
     }
 
-    private void onPost(String sessionId, Channel channel, String origin, ChannelBuffer content)
+    private void onPost(String sessionId, ChannelHandlerContext ctx, String origin, ByteBuf content)
                                                                                 throws IOException {
         XHRPollingClient client = sessionId2Client.get(sessionId);
         if (client == null) {
             log.debug("Client with sessionId: {} was already disconnected. Channel closed!", sessionId);
-            channel.close();
+            ctx.channel().close();
             return;
         }
 
-        channel.write(new XHROutMessage(origin));
-        Channels.fireMessageReceived(channel, new PacketsMessage(client, content));
+        // release POST response before message processing
+        ctx.channel().writeAndFlush(new XHROutMessage(origin, sessionId));
+        ctx.pipeline().fireChannelRead(new PacketsMessage(client, content));
     }
 
-    private void onGet(String sessionId, Channel channel, String origin) {
+    private void onGet(String sessionId, ChannelHandlerContext ctx, String origin) {
         if (!authorizeHandler.isSessionAuthorized(sessionId)) {
-            sendError(channel, origin, sessionId);
+            sendError(ctx, origin, sessionId);
             return;
         }
 
         XHRPollingClient client = (XHRPollingClient) sessionId2Client.get(sessionId);
         if (client == null) {
-            client = createClient(origin, channel, sessionId);
+            client = createClient(origin, ctx.channel(), sessionId);
         }
 
-        client.update(channel, origin);
+        client.bindChannel(ctx.channel(), origin);
 
-        scheduleDisconnect(channel, sessionId);
-        scheduleNoop(channel, sessionId);
+        scheduleDisconnect(ctx.channel(), sessionId);
+        scheduleNoop(sessionId);
     }
 
     private XHRPollingClient createClient(String origin, Channel channel, String sessionId) {
         XHRPollingClient client = new XHRPollingClient(ackManager, disconnectable, sessionId, Transport.XHRPOLLING);
 
         sessionId2Client.put(sessionId, client);
-        client.update(channel, origin);
+        client.bindChannel(channel, origin);
 
         authorizeHandler.connect(client);
         log.debug("Client for sessionId: {} was created", sessionId);
         return client;
     }
 
-    private void sendError(Channel channel, String origin, String sessionId) {
+    private void sendError(ChannelHandlerContext ctx, String origin, String sessionId) {
         log.debug("Client with sessionId: {} was not found! Reconnect error response sended", sessionId);
         Packet packet = new Packet(PacketType.ERROR);
         packet.setReason(ErrorReason.CLIENT_NOT_HANDSHAKEN);
         packet.setAdvice(ErrorAdvice.RECONNECT);
-        channel.write(new XHRErrorMessage(packet, origin));
+        ctx.channel().write(new XHRErrorMessage(packet, origin, sessionId));
     }
 
     @Override
