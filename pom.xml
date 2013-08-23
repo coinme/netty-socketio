@@ -1,15 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
  <modelVersion>4.0.0</modelVersion>
 
- <groupId>com.corundumstudio.socketio</groupId>
- <artifactId>netty-socketio</artifactId>
- <version>1.5.0-SNAPSHOT</version>
- <packaging>jar</packaging>
- <name>NettySocketIO</name>
- <description>Socket.IO server implemented on Java</description>
- <inceptionYear>2012</inceptionYear>
- <url>https://github.com/mrniko/netty-socketio</url>
-
 <groupId>com.zipwhip</groupId>
 <artifactId>netty-socketio</artifactId>
 <version>1.0.1-SNAPSHOT</version>
@@ -163,25 +154,6 @@
           </configuration>
         </plugin>
 
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.10</version>
-          <executions>
-            <execution>
-              <phase>verify</phase>
-              <goals>
-                <goal>checkstyle</goal>
-              </goals>
-            </execution>
-          </executions>
-          <configuration>
-            <consoleOutput>true</consoleOutput>
-            <enableRSS>false</enableRSS>
-            <configLocation>/checkstyle.xml</configLocation>
-          </configuration>
-        </plugin>
-
        <plugin>
          <artifactId>maven-compiler-plugin</artifactId>
          <version>3.1</version>
@@ -213,40 +185,6 @@
             <configuration>
                 <argLine>-Dfile.encoding=utf-8</argLine>
             </configuration>
-        </plugin>
-
-       
-       <plugin>
-            <groupId>com.mycila.maven-license-plugin</groupId>
-            <artifactId>maven-license-plugin</artifactId>
-            <version>1.10.b1</version>
-            <configuration>
-                <basedir>${basedir}</basedir>
-                <header>${basedir}/header.txt</header>
-                <quiet>false</quiet>
-                <failIfMissing>true</failIfMissing>
-                <aggregate>false</aggregate>
-                <includes>
-                    <include>src/**</include>
-                </includes>
-                <excludes>
-                    <exclude>target/**</exclude>
-                </excludes>
-                <useDefaultExcludes>true</useDefaultExcludes>
-                <mapping>
-                    <java>JAVADOC_STYLE</java>
-                </mapping>
-                <strictCheck>true</strictCheck>
-                <useDefaultMapping>true</useDefaultMapping>
-                <encoding>UTF-8</encoding>
-            </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>check</goal>
-                    </goals>
-                </execution>
-            </executions>
         </plugin>
   </plugins>
  </build>
