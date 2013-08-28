@@ -15,8 +15,6 @@
  */
 package com.corundumstudio.socketio;
 
-import java.util.Collections;
-
 import com.corundumstudio.socketio.ack.AckManager;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.namespace.NamespacesHub;
@@ -89,7 +87,7 @@ public class PacketListener {
 
         // send ack response if it not executed
         // during {@link DataListener#onData} invocation
-        ackRequest.sendAckData(Collections.emptyList());
+        //ackRequest.sendAckData(Collections.emptyList());
     }
 
 }
