@@ -15,33 +15,23 @@
  */
 package com.corundumstudio.socketio.parser;
 
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.misc.ConcurrentHashSet;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JacksonJsonSupport implements JsonSupport {
 
@@ -201,6 +191,7 @@ public class JacksonJsonSupport implements JsonSupport {
 
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(SerializationFeature.WRITE_BIGDECIMAL_AS_PLAIN, true);
 
 //        TODO If jsonObjectDeserializer will be not enough
 //        TypeResolverBuilder<?> typer = new DefaultTypeResolverBuilder(DefaultTyping.NON_FINAL);
