@@ -15,13 +15,14 @@
  */
 package com.corundumstudio.socketio;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
+import io.netty.channel.ChannelFuture;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Ack request received from Socket.IO client.
@@ -41,7 +42,7 @@ public class AckRequest {
 
     private final Packet originalPacket;
     private final SocketIOClient client;
-    private final AtomicBoolean sended = new AtomicBoolean();
+    private final AtomicBoolean sent = new AtomicBoolean();
 
     public AckRequest(Packet originalPacket, SocketIOClient client) {
         this.originalPacket = originalPacket;
@@ -64,9 +65,9 @@ public class AckRequest {
      *
      * @param objs - ack data objects
      */
-    public void sendAckData(Object ... objs) {
+    public ChannelFuture sendAckData(Object ... objs) {
         List<Object> args = Arrays.asList(objs);
-        sendAckData(args);
+        return sendAckData(args);
     }
 
     /**
@@ -76,14 +77,16 @@ public class AckRequest {
      *
      * @param objs - ack data object list
      */
-    public void sendAckData(List<Object> objs) {
-        if (!isAckRequested() || !sended.compareAndSet(false, true)) {
-            return;
+    public ChannelFuture sendAckData(List<Object> objs) {
+        if (!isAckRequested() || !sent.compareAndSet(false, true)) {
+            return null; // TODO: a failing future?
         }
+
         Packet ackPacket = new Packet(PacketType.ACK);
         ackPacket.setAckId(originalPacket.getId());
         ackPacket.setArgs(objs);
-        client.send(ackPacket);
+
+        return client.send(ackPacket);
     }
 
 }

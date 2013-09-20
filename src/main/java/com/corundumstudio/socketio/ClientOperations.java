@@ -16,6 +16,7 @@
 package com.corundumstudio.socketio;
 
 import com.corundumstudio.socketio.parser.Packet;
+import io.netty.channel.ChannelFuture;
 
 /**
  * Available client operations
@@ -28,27 +29,27 @@ public interface ClientOperations {
      *
      * @param message - message to send
      */
-    void sendMessage(String message);
+    ChannelFuture sendMessage(String message);
 
     /**
      * Send object. Object will be encoded to json-format.
      *
      * @param object - object to send
      */
-    void sendJsonObject(Object object);
+    ChannelFuture sendJsonObject(Object object);
 
     /**
      * Send packet
      *
      * @param packet - packet to send
      */
-    void send(Packet packet);
+    ChannelFuture send(Packet packet);
 
     /**
      * Disconnect client
      *
      */
-    void disconnect();
+    ChannelFuture disconnect();
 
     /**
      * Send event
@@ -56,6 +57,6 @@ public interface ClientOperations {
      * @param name - event name
      * @param data - event data
      */
-    void sendEvent(String name, Object data);
+    ChannelFuture sendEvent(String name, Object data);
 
 }

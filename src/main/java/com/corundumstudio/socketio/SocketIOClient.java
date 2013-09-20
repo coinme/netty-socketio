@@ -16,6 +16,7 @@
 package com.corundumstudio.socketio;
 
 import com.corundumstudio.socketio.parser.Packet;
+import io.netty.channel.ChannelFuture;
 
 import java.net.SocketAddress;
 
@@ -36,7 +37,7 @@ public interface SocketIOClient extends ClientOperations {
      * @param data - event data
      * @param ackCallback - ack callback
      */
-    void sendEvent(String name, Object data, AckCallback<?> ackCallback);
+    ChannelFuture sendEvent(String name, Object data, AckCallback<?> ackCallback);
 
     /**
      * Send packet with ack callback
@@ -44,7 +45,7 @@ public interface SocketIOClient extends ClientOperations {
      * @param packet - packet to send
      * @param ackCallback - ack callback
      */
-    void send(Packet packet, AckCallback<?> ackCallback);
+    ChannelFuture send(Packet packet, AckCallback<?> ackCallback);
 
     /**
      * Send object with ack callback
@@ -52,7 +53,7 @@ public interface SocketIOClient extends ClientOperations {
      * @param object - object to send
      * @param ackCallback - ack callback
      */
-    void sendJsonObject(Object object, AckCallback<?> ackCallback);
+    ChannelFuture sendJsonObject(Object object, AckCallback<?> ackCallback);
 
     /**
      * Send message with ack callback
@@ -60,7 +61,7 @@ public interface SocketIOClient extends ClientOperations {
      * @param message - message to send
      * @param ackCallback - ack callback
      */
-    void sendMessage(String message, AckCallback<?> ackCallback);
+    ChannelFuture sendMessage(String message, AckCallback<?> ackCallback);
 
     /**
      * Client namespace

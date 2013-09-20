@@ -15,10 +15,11 @@
  */
 package com.corundumstudio.socketio;
 
-import java.util.Collection;
-
 import com.corundumstudio.socketio.misc.IterableCollection;
 import com.corundumstudio.socketio.parser.Packet;
+import io.netty.channel.ChannelFuture;
+
+import java.util.Collection;
 
 public class BroadcastOperations implements ClientOperations {
 
@@ -34,10 +35,12 @@ public class BroadcastOperations implements ClientOperations {
     }
 
     @Override
-    public void sendMessage(String message) {
+    public ChannelFuture sendMessage(String message) {
         for (SocketIOClient client : clients) {
             client.sendMessage(message);
         }
+
+        return null; // TODO: should we fix this?
     }
 
     public <T> void sendMessage(String message, BroadcastAckCallback<T> ackCallback) {
@@ -48,10 +51,12 @@ public class BroadcastOperations implements ClientOperations {
     }
 
     @Override
-    public void sendJsonObject(Object object) {
+    public ChannelFuture sendJsonObject(Object object) {
         for (SocketIOClient client : clients) {
             client.sendJsonObject(object);
         }
+
+        return null; // TODO: should we fix this?
     }
 
     public <T> void sendJsonObject(Object object, BroadcastAckCallback<T> ackCallback) {
@@ -62,10 +67,12 @@ public class BroadcastOperations implements ClientOperations {
     }
 
     @Override
-    public void send(Packet packet) {
+    public ChannelFuture send(Packet packet) {
         for (SocketIOClient client : clients) {
             client.send(packet);
         }
+
+        return null; // TODO: should we fix this?
     }
 
     public <T> void send(Packet packet, BroadcastAckCallback<T> ackCallback) {
@@ -76,17 +83,21 @@ public class BroadcastOperations implements ClientOperations {
     }
 
     @Override
-    public void disconnect() {
+    public ChannelFuture disconnect() {
         for (SocketIOClient client : clients) {
             client.disconnect();
         }
+
+        return null; // TODO: should we fix this?
     }
 
     @Override
-    public void sendEvent(String name, Object data) {
+    public ChannelFuture sendEvent(String name, Object data) {
         for (SocketIOClient client : clients) {
             client.sendEvent(name, data);
         }
+
+        return null; // TODO: should we fix this?
     }
 
     public <T> void sendEvent(String name, Object data, BroadcastAckCallback<T> ackCallback) {

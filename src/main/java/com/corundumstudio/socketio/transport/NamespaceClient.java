@@ -21,6 +21,7 @@ import com.corundumstudio.socketio.Transport;
 import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
+import io.netty.channel.ChannelFuture;
 
 import java.net.SocketAddress;
 import java.util.Collections;
@@ -56,63 +57,63 @@ public class NamespaceClient implements SocketIOClient {
     }
 
     @Override
-    public void sendEvent(String name, Object data) {
+    public ChannelFuture sendEvent(String name, Object data) {
         Packet packet = new Packet(PacketType.EVENT);
         packet.setName(name);
         packet.setArgs(Collections.singletonList(data));
-        send(packet);
+        return send(packet);
     }
 
     @Override
-    public void sendEvent(String name, Object data, AckCallback<?> ackCallback) {
+    public ChannelFuture sendEvent(String name, Object data, AckCallback<?> ackCallback) {
         Packet packet = new Packet(PacketType.EVENT);
         packet.setName(name);
         packet.setArgs(Collections.singletonList(data));
-        send(packet, ackCallback);
+        return send(packet, ackCallback);
     }
 
     @Override
-    public void sendMessage(String message, AckCallback<?> ackCallback) {
+    public ChannelFuture sendMessage(String message, AckCallback<?> ackCallback) {
         Packet packet = new Packet(PacketType.MESSAGE);
         packet.setData(message);
-        send(packet, ackCallback);
+        return send(packet, ackCallback);
     }
 
     @Override
-    public void sendMessage(String message) {
+    public ChannelFuture sendMessage(String message) {
         Packet packet = new Packet(PacketType.MESSAGE);
         packet.setData(message);
-        send(packet);
+        return send(packet);
     }
 
     @Override
-    public void sendJsonObject(Object object) {
+    public ChannelFuture sendJsonObject(Object object) {
         Packet packet = new Packet(PacketType.JSON);
         packet.setData(object);
-        send(packet);
+        return send(packet);
     }
 
     @Override
-    public void send(Packet packet, AckCallback<?> ackCallback) {
+    public ChannelFuture send(Packet packet, AckCallback<?> ackCallback) {
         long index = baseClient.getAckManager().registerAck(getSessionId(), ackCallback);
         packet.setId(index);
         if (!ackCallback.getResultClass().equals(Void.class)) {
             packet.setAck(Packet.ACK_DATA);
         }
-        send(packet);
+        return send(packet);
     }
 
     @Override
-    public void send(Packet packet) {
+    public ChannelFuture send(Packet packet) {
         packet.setEndpoint(namespace.getName());
-        baseClient.send(packet);
+        return baseClient.send(packet);
     }
 
     @Override
-    public void sendJsonObject(Object object, AckCallback<?> ackCallback) {
+    public ChannelFuture sendJsonObject(Object object, AckCallback<?> ackCallback) {
         Packet packet = new Packet(PacketType.JSON);
         packet.setData(object);
-        send(packet, ackCallback);
+        return send(packet, ackCallback);
     }
 
     public void onDisconnect() {
@@ -121,9 +122,9 @@ public class NamespaceClient implements SocketIOClient {
     }
 
     @Override
-    public void disconnect() {
-        send(new Packet(PacketType.DISCONNECT));
+    public ChannelFuture disconnect() {
         onDisconnect();
+        return send(new Packet(PacketType.DISCONNECT));
     }
 
     @Override
