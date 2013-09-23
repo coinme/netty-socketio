@@ -15,16 +15,6 @@
  */
 package com.corundumstudio.socketio.ack;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.corundumstudio.socketio.AckCallback;
 import com.corundumstudio.socketio.Disconnectable;
 import com.corundumstudio.socketio.SocketIOClient;
@@ -33,6 +23,14 @@ import com.corundumstudio.socketio.scheduler.CancelableScheduler;
 import com.corundumstudio.socketio.scheduler.SchedulerKey;
 import com.corundumstudio.socketio.scheduler.SchedulerKey.Type;
 import com.corundumstudio.socketio.transport.BaseClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AckManager implements Disconnectable {
 
@@ -94,7 +92,8 @@ public class AckManager implements Disconnectable {
     }
 
     public void onAck(SocketIOClient client, Packet packet) {
-        SchedulerKey key = new SchedulerKey(Type.ACK_TIMEOUT, client.getSessionId());
+        // TODO: ObjectPool here.
+        SchedulerKey key = new AckSchedulerKey(Type.ACK_TIMEOUT, client.getSessionId(), packet.getAckId());
         scheduler.cancel(key);
 
         AckCallback callback = removeCallback(client.getSessionId(), packet.getAckId());
