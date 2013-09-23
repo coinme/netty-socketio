@@ -94,7 +94,7 @@ public class SocketIOEncoder extends ChannelOutboundHandlerAdapter implements Di
     }
 
     private void write(HttpMessage xhrMessage, Packet packet,
-            ChannelHandlerContext ctx, ByteBuf out) throws IOException {
+            ChannelHandlerContext ctx, ByteBuf out, ChannelPromise promise) throws IOException {
         XHRClientEntry clientEntry = getXHRClientEntry(xhrMessage.getSessionId());
         if (packet != null) {
             clientEntry.addPacket(packet);
@@ -108,10 +108,10 @@ public class SocketIOEncoder extends ChannelOutboundHandlerAdapter implements Di
         }
 
         encoder.encodePackets(clientEntry.getPackets(), out, ctx.alloc());
-        sendMessage(xhrMessage, channel, out);
+        sendMessage(xhrMessage, channel, out, promise);
     }
 
-    private void sendMessage(HttpMessage msg, Channel channel, ByteBuf out) {
+    private void sendMessage(HttpMessage msg, Channel channel, ByteBuf out, ChannelPromise promise) {
         HttpResponse res = createHttpResponse(msg.getOrigin(), out);
         channel.write(res);
 
@@ -120,7 +120,7 @@ public class SocketIOEncoder extends ChannelOutboundHandlerAdapter implements Di
                         out.toString(CharsetUtil.UTF_8), msg.getSessionId());
         }
         if (out.isReadable()) {
-            channel.write(out);
+            channel.write(out, promise);
         } else {
             out.release();
         }
@@ -153,58 +153,58 @@ public class SocketIOEncoder extends ChannelOutboundHandlerAdapter implements Di
         ByteBuf out = encoder.allocateBuffer(ctx.alloc());
 
         if (msg instanceof AuthorizeMessage) {
-            handle((AuthorizeMessage) msg, ctx.channel(), out);
+            handle((AuthorizeMessage) msg, ctx.channel(), out, promise);
         }
 
         if (msg instanceof XHRNewChannelMessage) {
-            write((XHRNewChannelMessage) msg, null, ctx, out);
+            write((XHRNewChannelMessage) msg, null, ctx, out, promise);
         }
         if (msg instanceof XHRPacketMessage) {
             XHRPacketMessage m = (XHRPacketMessage) msg;
-            write(m, m.getPacket(), ctx, out);
+            write(m, m.getPacket(), ctx, out, promise);
         }
         if (msg instanceof XHROutMessage) {
-            sendMessage((XHROutMessage) msg, ctx.channel(), out);
+            sendMessage((XHROutMessage) msg, ctx.channel(), out, promise);
         }
         if (msg instanceof XHRErrorMessage) {
             XHRErrorMessage xhrErrorMessage = (XHRErrorMessage) msg;
             encoder.encodePacket(xhrErrorMessage.getPacket(), out);
-            sendMessage(xhrErrorMessage, ctx.channel(), out);
+            sendMessage(xhrErrorMessage, ctx.channel(), out, promise);
         }
 
         if (msg instanceof WebSocketPacketMessage) {
-            handle((WebSocketPacketMessage) msg, ctx.channel(), out);
+            handle((WebSocketPacketMessage) msg, ctx.channel(), out, promise);
         }
         if (msg instanceof WebsocketErrorMessage) {
-            handle((WebsocketErrorMessage) msg, ctx.channel(), out);
+            handle((WebsocketErrorMessage) msg, ctx.channel(), out, promise);
         }
     }
 
-    private void handle(AuthorizeMessage authMsg, Channel channel, ByteBuf out) throws IOException {
+    private void handle(AuthorizeMessage authMsg, Channel channel, ByteBuf out, ChannelPromise promise) throws IOException {
         String message = authMsg.getMsg();
         if (authMsg.getJsonpParam() != null) {
             encoder.encodeJsonP(authMsg.getJsonpParam(), message, out);
         } else {
             out.writeBytes(message.getBytes());
         }
-        sendMessage(authMsg, channel, out);
+        sendMessage(authMsg, channel, out, promise);
     }
 
-    private void handle(WebSocketPacketMessage webSocketPacketMessage, Channel channel, ByteBuf out) throws IOException {
+    private void handle(WebSocketPacketMessage webSocketPacketMessage, Channel channel, ByteBuf out, ChannelPromise promise) throws IOException {
         encoder.encodePacket(webSocketPacketMessage.getPacket(), out);
         WebSocketFrame res = new TextWebSocketFrame(out);
         log.trace("Out message: {} sessionId: {}",
                         out.toString(CharsetUtil.UTF_8), webSocketPacketMessage.getSessionId());
-        channel.writeAndFlush(res);
+        channel.writeAndFlush(res, promise);
         if (!out.isReadable()) {
             out.release();
         }
     }
 
-    private void handle(WebsocketErrorMessage websocketErrorMessage, Channel channel, ByteBuf out) throws IOException {
+    private void handle(WebsocketErrorMessage websocketErrorMessage, Channel channel, ByteBuf out, ChannelPromise promise) throws IOException {
         encoder.encodePacket(websocketErrorMessage.getPacket(), out);
         TextWebSocketFrame frame = new TextWebSocketFrame(out);
-        channel.writeAndFlush(frame);
+        channel.writeAndFlush(frame, promise);
     }
 
     @Override
