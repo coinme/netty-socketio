@@ -22,6 +22,7 @@ import com.corundumstudio.socketio.namespace.Namespace;
 import com.corundumstudio.socketio.parser.Packet;
 import com.corundumstudio.socketio.parser.PacketType;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 
 import java.net.SocketAddress;
 import java.util.Collections;
@@ -123,8 +124,16 @@ public class NamespaceClient implements SocketIOClient {
 
     @Override
     public ChannelFuture disconnect() {
-        onDisconnect();
-        return send(new Packet(PacketType.DISCONNECT));
+        ChannelFuture future = null;
+
+        try {
+            onDisconnect();
+        } finally {
+            future = send(new Packet(PacketType.DISCONNECT))
+                        .addListener(ChannelFutureListener.CLOSE);
+        }
+
+        return future;
     }
 
     @Override
