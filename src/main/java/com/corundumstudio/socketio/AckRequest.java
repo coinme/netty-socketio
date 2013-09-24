@@ -89,4 +89,7 @@ public class AckRequest {
         return client.send(ackPacket);
     }
 
+    public boolean isSent() {
+        return sent.get();
+    }
 }
