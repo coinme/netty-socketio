@@ -152,17 +152,24 @@ public class JacksonJsonSupport implements JsonSupport {
             Event event = new Event(eventName, eventArgs);
             JsonNode args = root.get("args");
             if (args != null) {
-                Iterator<JsonNode> iterator = args.elements();
-                if (iterator.hasNext()) {
-                    JsonNode node = iterator.next();
+                if (args.isArray()) {
+                    Iterator<JsonNode> iterator = args.elements();
+                    if (iterator.hasNext()) {
+                        JsonNode node = iterator.next();
+                        Class<?> eventClass = eventMapping.get(eventName);
+                        Object arg = mapper.treeToValue(node, eventClass);
+                        eventArgs.add(arg);
+                        while (iterator.hasNext()) {
+                            node = iterator.next();
+                            arg = mapper.treeToValue(node, Object.class);
+                            eventArgs.add(arg);
+                        }
+                    }
+                } else {
+                    JsonNode node = args;
                     Class<?> eventClass = eventMapping.get(eventName);
                     Object arg = mapper.treeToValue(node, eventClass);
                     eventArgs.add(arg);
-                    while (iterator.hasNext()) {
-                        node = iterator.next();
-                        arg = mapper.treeToValue(node, Object.class);
-                        eventArgs.add(arg);
-                    }
                 }
             }
             return event;
