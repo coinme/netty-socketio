@@ -38,7 +38,7 @@ public class Configuration {
 
     private int heartbeatThreadPoolSize = Runtime.getRuntime().availableProcessors() * 2;
     private int heartbeatTimeout = 60;
-    private int heartbeatInterval = 1200;
+    private int heartbeatInterval = 25;
     private int closeTimeout = 60;
 
     private int maxHttpContentLength = 64 * 1024;
