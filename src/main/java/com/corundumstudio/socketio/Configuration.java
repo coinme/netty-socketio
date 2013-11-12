@@ -15,13 +15,12 @@
  */
 package com.corundumstudio.socketio;
 
-import io.netty.handler.codec.TooLongFrameException;
-
-import java.io.InputStream;
-
 import com.corundumstudio.socketio.parser.JacksonJsonSupport;
 import com.corundumstudio.socketio.parser.JsonSupport;
 import com.corundumstudio.socketio.parser.JsonSupportWrapper;
+import io.netty.handler.codec.TooLongFrameException;
+
+import java.io.InputStream;
 
 public class Configuration {
 
@@ -39,7 +38,7 @@ public class Configuration {
 
     private int heartbeatThreadPoolSize = Runtime.getRuntime().availableProcessors() * 2;
     private int heartbeatTimeout = 60;
-    private int heartbeatInterval = 25;
+    private int heartbeatInterval = 1200;
     private int closeTimeout = 60;
 
     private int maxHttpContentLength = 64 * 1024;
@@ -61,7 +60,7 @@ public class Configuration {
     /**
      * Defend from further modifications by cloning
      *
-     * @param configuration - Configuration object to clone
+     * @param conf - Configuration object to clone
      */
     Configuration(Configuration conf) {
         setBossThreads(conf.getBossThreads());
@@ -163,7 +162,7 @@ public class Configuration {
     /**
      * Heartbeat interval
      *
-     * @param value
+     * @param heartbeatIntervalSecs
      *            - time in seconds
      */
     public void setHeartbeatInterval(int heartbeatIntervalSecs) {
@@ -177,7 +176,7 @@ public class Configuration {
      * Heartbeat timeout
      * Use <code>0</code> to disable it
      *
-     * @param value
+     * @param heartbeatTimeoutSecs
      *            - time in seconds
      */
     public void setHeartbeatTimeout(int heartbeatTimeoutSecs) {
@@ -193,7 +192,7 @@ public class Configuration {
     /**
      * Heartbeat thread pool size
      *
-     * @param value
+     * @param heartbeatThreadPoolSize
      *            - threads amount
      */
     public void setHeartbeatThreadPoolSize(int heartbeatThreadPoolSize) {
@@ -283,9 +282,10 @@ public class Configuration {
      *        If the length of the aggregated content exceeds this value,
      *        a {@link TooLongFrameException} will be raised.
      */
-    public void setMaxHttpContentLength(int value) {
-        this.maxHttpContentLength = value;
+    public void setMaxHttpContentLength(int maxContentLength) {
+        this.maxHttpContentLength = maxContentLength;
     }
+
     public int getMaxHttpContentLength() {
         return maxHttpContentLength;
     }
