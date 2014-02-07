@@ -7,7 +7,7 @@
 </parent>
 <groupId>com.zipwhip</groupId>
 <artifactId>netty-socketio</artifactId>
-<version>1.0.2-SNAPSHOT</version>
+<version>1.0.3-SNAPSHOT</version>
 <packaging>jar</packaging>
 <name>NettySocketIO</name>
 <description>Socket.IO server implemented on Java</description>
