@@ -118,8 +118,12 @@ public class NamespaceClient implements SocketIOClient {
     }
 
     public void onDisconnect() {
-        namespace.onDisconnect(this);
+        // 2/7/14: Michael changed the order of operations in this method to fix a race condition.
+
+        // This line calls ackManager.onDisconnect (which will kill the AckCallback.onTimeout scheduler)
         baseClient.removeChildClient(this);
+        // This line will call our SocketIoFeature.disconnectHandler
+        namespace.onDisconnect(this);
     }
 
     @Override
