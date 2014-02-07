@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 public class HeartbeatHandler implements Disconnectable {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
     private final CancelableScheduler scheduler;
     private final Configuration configuration;
@@ -49,46 +49,52 @@ public class HeartbeatHandler implements Disconnectable {
             return;
         }
 
-        final SchedulerKey heartbeatTimeoutKey = getHeartbeatTimeoutKey(Type.HEARBEAT_TIMEOUT, client.getSessionId());
-        // cancel heartbeat check because the client answered
-        synchronized (heartbeatTimeoutKey) {
-            scheduler.cancel(heartbeatTimeoutKey);
-            scheduler.schedule(getHeartbeatRunnable(Type.HEARBEAT_TIMEOUT, client), configuration.getHeartbeatInterval(), TimeUnit.SECONDS);
-        }
+        // cancel disconnect timeout
+        cancelTimeout(Type.CLOSE_TIMEOUT, client);
+
+        // refresh heartbeat and disconnect timers
+        scheduleHeartbeatAndDisconnectTimeouts(client);
     }
 
     @Override
     public void onDisconnect(BaseClient client) {
-        SchedulerKey schedulerKey = getHeartbeatTimeoutKey(Type.HEARBEAT_TIMEOUT, client.getSessionId());
+        cancelTimeout(Type.HEARBEAT_TIMEOUT, client);
+        cancelTimeout(Type.CLOSE_TIMEOUT, client);
+    }
 
-        if (schedulerKey == null) {
-            log.error("Couldn't cancel schedule for null client!");
-            return;
-        }
+    private void cancelTimeout(Type type, final BaseClient client) {
+        SchedulerKey timeoutKey = getSchedulerKey(type, client.getSessionId());
 
-        synchronized (schedulerKey) {
-            scheduler.cancel(getHeartbeatTimeoutKey(Type.HEARBEAT_TIMEOUT, client.getSessionId()));
+        synchronized (timeoutKey) {
+            scheduler.cancel(timeoutKey);
         }
     }
 
-    private void scheduleClientHeartbeatCheck(final BaseClient client, SchedulerKey heartbeatTimeoutKey) {
-        // cancel previous heartbeat check
+    private void scheduleHeartbeatAndDisconnectTimeouts(final BaseClient client) {
+        SchedulerKey heartbeatTimeoutKey = getSchedulerKey(Type.HEARBEAT_TIMEOUT, client.getSessionId());
+
         synchronized (heartbeatTimeoutKey) {
+            // cancel previous heartbeat just in case
             scheduler.cancel(heartbeatTimeoutKey);
-            scheduler.schedule(heartbeatTimeoutKey, getDisconnectRunnable(Type.HEARBEAT_TIMEOUT, client), configuration.getHeartbeatTimeout(), TimeUnit.SECONDS);
+            // schedule new heartbeat
+            scheduler.schedule(heartbeatTimeoutKey, getHeartbeatRunnable(Type.HEARBEAT_TIMEOUT, client), configuration.getHeartbeatInterval(), TimeUnit.SECONDS);
         }
     }
 
     private Runnable getHeartbeatRunnable(Type heartbeatType, final BaseClient client) {
-        String key = getMapKey(heartbeatType, client.getSessionId());
+        String key = getKey(heartbeatType, client.getSessionId());
         if (heartbeatRunnableMap.containsKey(key)) {
             return heartbeatRunnableMap.get(key);
         }
 
+        final Runnable disconnectRunnable = getDisconnectRunnable(client);
+
         Runnable runnable = new Runnable() {
             public void run() {
-                client.send(new Packet(PacketType.HEARTBEAT));
-                scheduleClientHeartbeatCheck(client, getHeartbeatTimeoutKey(Type.HEARBEAT_TIMEOUT, client.getSessionId()));
+                synchronized (client) {
+                    client.send(new Packet(PacketType.HEARTBEAT));
+                    scheduler.schedule(getSchedulerKey(Type.CLOSE_TIMEOUT, client.getSessionId()), disconnectRunnable, configuration.getHeartbeatTimeout(), TimeUnit.SECONDS);
+                }
             }
         };
         heartbeatRunnableMap.put(key, runnable);
@@ -96,16 +102,18 @@ public class HeartbeatHandler implements Disconnectable {
         return runnable;
     }
 
-    private Runnable getDisconnectRunnable(Type heartbeatType, final BaseClient client) {
-        String key = getMapKey(heartbeatType, client.getSessionId());
+    private Runnable getDisconnectRunnable(final BaseClient client) {
+        String key = getKey(Type.CLOSE_TIMEOUT, client.getSessionId());
         if (disconnectRunnableMap.containsKey(key)) {
             return disconnectRunnableMap.get(key);
         }
 
         Runnable runnable = new Runnable() {
             public void run() {
-                client.disconnect();
-                log.debug("Client with sessionId: {} disconnected due to heartbeat timeout", client.getSessionId());
+                synchronized (client) {
+                    client.disconnect();
+                    LOGGER.warn("Client with sessionId: {} disconnected due to heartbeat timeout", client.getSessionId());
+                }
             }
         };
 
@@ -114,20 +122,19 @@ public class HeartbeatHandler implements Disconnectable {
         return runnable;
     }
 
-    private SchedulerKey getHeartbeatTimeoutKey(Type heartbeatType, String sessionId) {
-        String key = getMapKey(heartbeatType, sessionId);
+    private SchedulerKey getSchedulerKey(Type type, String sessionId) {
+        String key = getKey(type, sessionId);
         if (schedulerKeyMap.containsKey(key)) {
             return schedulerKeyMap.get(key);
         }
 
-        SchedulerKey schedulerKey = new SchedulerKey(heartbeatType, sessionId);
+        SchedulerKey schedulerKey = new SchedulerKey(type, sessionId);
         schedulerKeyMap.put(key, schedulerKey);
 
         return schedulerKey;
     }
 
-    private String getMapKey(Type heartbeatType, String sessionId) {
-        return "heartbeat:" + heartbeatType + ":" + sessionId;
+    private String getKey(Type heartbeatType, String sessionId) {
+        return heartbeatType + ":" + sessionId;
     }
-
 }
