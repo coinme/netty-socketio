@@ -15,7 +15,7 @@
  */
 package com.corundumstudio.socketio.scheduler;
 
-public class SchedulerKey {
+public class SchedulerKey implements Comparable<SchedulerKey> {
 
     public enum Type {POLLING, HEARBEAT_TIMEOUT, CLOSE_TIMEOUT, AUTHORIZE, ACK_TIMEOUT};
 
@@ -55,5 +55,30 @@ public class SchedulerKey {
             return false;
         return true;
     }
+
+    @Override
+    public int compareTo(SchedulerKey o1) {
+        SchedulerKey o2 = this;
+
+        if ((o1 == null) && (o2 == null)) {
+            return 0;
+        } else if ((o1 == null) && (o2 != null)) {
+            return -1;
+        } else if ((o1 != null) && (o2 == null)) {
+            return 1;
+        }
+
+        int left = o1.hashCode();
+        int right = o2.hashCode();
+
+        if (left < right) {
+            return -1;
+        } else if (left > right) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
 
 }

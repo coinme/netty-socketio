@@ -16,6 +16,7 @@
 package com.corundumstudio.socketio.scheduler;
 
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -24,14 +25,14 @@ import java.util.concurrent.TimeUnit;
 
 public class CancelableScheduler {
 
-    private final Map<SchedulerKey, Future<?>> scheduledFutures = new ConcurrentHashMap<SchedulerKey, Future<?>>();
+    private final Map<SchedulerKey, Future<?>> scheduledFutures = new TreeMap<SchedulerKey, Future<?>>();
     private final ScheduledExecutorService executorService;
 
     public CancelableScheduler(int threadPoolSize) {
         executorService = Executors.newScheduledThreadPool(threadPoolSize);
     }
 
-    public void cancel(SchedulerKey key) {
+    public synchronized void cancel(SchedulerKey key) {
         Future<?> future = scheduledFutures.remove(key);
         if (future != null) {
             future.cancel(false);
@@ -42,7 +43,8 @@ public class CancelableScheduler {
         executorService.schedule(runnable, delay, unit);
     }
 
-    public void schedule(final SchedulerKey key, final Runnable runnable, long delay, TimeUnit unit) {
+    // TODO: If a cancel comes in at the same time as a schedule, this object will fail. It is not thread safe.
+    public synchronized void schedule(final SchedulerKey key, final Runnable runnable, long delay, TimeUnit unit) {
         Future<?> future = executorService.schedule(new Runnable() {
             @Override
             public void run() {
