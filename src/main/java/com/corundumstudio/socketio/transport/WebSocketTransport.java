@@ -115,7 +115,12 @@ public class WebSocketTransport extends BaseTransport {
             return;
         }
 
-        final String sessionId = UUID.fromString(parts[4]).toString();
+        final String sessionId = parts[4];
+//        final String sessionId = UUID.fromString(parts[4]).toString();
+
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new IllegalArgumentException("The sessionId (parts[4]) was null!");
+        }
 
         WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(
                 getWebSocketLocation(req), null, false);
