@@ -6,6 +6,7 @@ import com.corundumstudio.socketio.transport.BaseClient;
 import io.netty.channel.ChannelFuture;
 import org.junit.Test;
 
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,7 @@ public class HeartbeatHandlerTest {
     private static Configuration configuration;
     private static MockClient client;
     private static HeartbeatHandler handler;
+    private Random random = new Random();
 
     @Test
     public void testHeartbeat() throws InterruptedException {
@@ -38,18 +40,51 @@ public class HeartbeatHandlerTest {
         client = new MockClient(UUID.randomUUID().toString(), connectedLatch);
 
         for (int i = 0; i < 10; i++) {
-            if (client.latch.getCount() < 1) {
-                fail("Disconnected too soon!");
+            // sleep for heartbeat interval
+            Thread.sleep(1500);
+
+            ensureConnected();
+
+            // simulate client heartbeat
+            handler.onHeartbeat(client);
+        }
+
+        assertEquals("Didn't disconnect in time!", true, client.latch.await(4, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testHeartbeatWithRandomHeartbeats() throws InterruptedException {
+        configuration = new Configuration();
+        configuration.setHeartbeatInterval(1);
+        configuration.setHeartbeatTimeout(2);
+
+        handler = new HeartbeatHandler(configuration, new CancelableScheduler(2));
+
+        CountDownLatch connectedLatch = new CountDownLatch(1);
+
+        client = new MockClient(UUID.randomUUID().toString(), connectedLatch);
+
+        for (int i = 0; i < 10; i++) {
+            // sleep for heartbeat interval
+            Thread.sleep(750);
+
+            if (random.nextBoolean()) {
+                handler.onHeartbeat(client);
             }
+
+            Thread.sleep(750);
+
+            ensureConnected();
 
             // simulate client heartbeat
             handler.onHeartbeat(client);
 
-            // sleep for heartbeat duration
-            Thread.sleep(1500);
+            if (random.nextBoolean()) {
+                handler.onHeartbeat(client);
+            }
         }
 
-        assertEquals("Didn't disconnect in time!", true, client.latch.await(2, TimeUnit.SECONDS));
+        assertEquals("Didn't disconnect in time!", true, client.latch.await(4, TimeUnit.SECONDS));
     }
 
     public static class MockClient extends BaseClient {
@@ -73,4 +108,9 @@ public class HeartbeatHandlerTest {
         }
     }
 
+    private void ensureConnected() {
+        if (client.latch.getCount() < 1) {
+            fail("Disconnected too soon!");
+        }
+    }
 }
