@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class AckManager implements Disconnectable {
 
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     class AckEntry {
 
         final Map<Long, AckCallback<?>> ackCallbacks = new ConcurrentHashMap<Long, AckCallback<?>>();
@@ -63,8 +65,6 @@ public class AckManager implements Disconnectable {
 
     }
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
-
     private final Map<String, AckEntry> ackEntries = new ConcurrentHashMap<String, AckEntry>();
 
     private final CancelableScheduler scheduler;
@@ -93,6 +93,11 @@ public class AckManager implements Disconnectable {
 
     public void onAck(SocketIOClient client, Packet packet) {
         // TODO: ObjectPool here.
+
+        if (log.isTraceEnabled()) {
+            log.trace("Ack received for client: " + client.getSessionId());
+        }
+
         SchedulerKey key = new AckSchedulerKey(Type.ACK_TIMEOUT, client.getSessionId(), packet.getAckId());
         scheduler.cancel(key);
 
