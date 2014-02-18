@@ -92,11 +92,11 @@ public class HeartbeatHandler implements Disconnectable {
         Runnable runnable = new Runnable() {
             public void run() {
                 synchronized (client) {
-                    client.send(new Packet(PacketType.HEARTBEAT));
-
                     cancelTimeout(Type.CLOSE_TIMEOUT, client);
 
                     scheduler.schedule(getSchedulerKey(Type.CLOSE_TIMEOUT, client.getSessionId()), disconnectRunnable, configuration.getHeartbeatTimeout(), TimeUnit.SECONDS);
+
+                    client.send(new Packet(PacketType.HEARTBEAT));
                 }
             }
         };
