@@ -92,6 +92,10 @@ public class HeartbeatHandler implements Disconnectable {
         Runnable runnable = new Runnable() {
             public void run() {
                 synchronized (client) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Running heartbeat task for client: " + client.getSessionId());
+                    }
+
                     cancelTimeout(Type.CLOSE_TIMEOUT, client);
 
                     scheduler.schedule(getSchedulerKey(Type.CLOSE_TIMEOUT, client.getSessionId()), disconnectRunnable, configuration.getHeartbeatTimeout(), TimeUnit.SECONDS);
@@ -114,6 +118,10 @@ public class HeartbeatHandler implements Disconnectable {
         Runnable runnable = new Runnable() {
             public void run() {
                 synchronized (client) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.warn("Running disconnect task for client: " + client.getSessionId());
+                    }
+
                     client.disconnect();
                     LOGGER.warn("Client with sessionId: {} disconnected due to heartbeat timeout", client.getSessionId());
                 }
