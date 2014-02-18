@@ -17,7 +17,6 @@ package com.corundumstudio.socketio.scheduler;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,6 +44,14 @@ public class CancelableScheduler {
 
     // TODO: If a cancel comes in at the same time as a schedule, this object will fail. It is not thread safe.
     public synchronized void schedule(final SchedulerKey key, final Runnable runnable, long delay, TimeUnit unit) {
+        // We only allow one scheduled task per key (otherwise you lose the ability to cancel)
+        if (scheduledFutures.containsKey(key)) {
+            Future future = scheduledFutures.remove(key);
+            if (future != null) {
+                future.cancel(false);
+            }
+        }
+
         Future<?> future = executorService.schedule(new Runnable() {
             @Override
             public void run() {
