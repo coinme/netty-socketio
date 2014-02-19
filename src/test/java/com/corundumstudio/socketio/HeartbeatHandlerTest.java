@@ -30,8 +30,8 @@ public class HeartbeatHandlerTest {
     @Test
     public void testHeartbeat() throws InterruptedException {
         configuration = new Configuration();
-        configuration.setHeartbeatInterval(1);
-        configuration.setHeartbeatTimeout(2);
+        configuration.setHeartbeatTimeout(1);
+        configuration.setCloseTimeout(2);
 
         handler = new HeartbeatHandler(configuration, new CancelableScheduler(2));
 
@@ -55,8 +55,8 @@ public class HeartbeatHandlerTest {
     @Test
     public void testHeartbeatWithRandomHeartbeats() throws InterruptedException {
         configuration = new Configuration();
-        configuration.setHeartbeatInterval(1);
-        configuration.setHeartbeatTimeout(2);
+        configuration.setHeartbeatTimeout(1);
+        configuration.setCloseTimeout(2);
 
         handler = new HeartbeatHandler(configuration, new CancelableScheduler(2));
 

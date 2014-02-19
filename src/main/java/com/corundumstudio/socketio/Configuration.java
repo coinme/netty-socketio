@@ -38,7 +38,7 @@ public class Configuration {
 
     private int heartbeatThreadPoolSize = Runtime.getRuntime().availableProcessors() * 2;
     private int heartbeatTimeout = 60;
-    private int heartbeatInterval = 25;
+//    private int heartbeatInterval = 25;
     private int closeTimeout = 60;
 
     private int maxHttpContentLength = 64 * 1024;
@@ -68,7 +68,7 @@ public class Configuration {
 
         setCloseTimeout(conf.getCloseTimeout());
 
-        setHeartbeatInterval(conf.getHeartbeatInterval());
+//        setHeartbeatInterval(conf.getHeartbeatInterval());
         setHeartbeatThreadPoolSize(conf.getHeartbeatThreadPoolSize());
         setHeartbeatTimeout(conf.getHeartbeatTimeout());
 
@@ -165,12 +165,12 @@ public class Configuration {
      * @param heartbeatIntervalSecs
      *            - time in seconds
      */
-    public void setHeartbeatInterval(int heartbeatIntervalSecs) {
-        this.heartbeatInterval = heartbeatIntervalSecs;
-    }
-    public int getHeartbeatInterval() {
-        return heartbeatInterval;
-    }
+//    public void setHeartbeatInterval(int heartbeatIntervalSecs) {
+//        this.heartbeatInterval = heartbeatIntervalSecs;
+//    }
+//    public int getHeartbeatInterval() {
+//        return heartbeatInterval;
+//    }
 
     /**
      * Heartbeat timeout
