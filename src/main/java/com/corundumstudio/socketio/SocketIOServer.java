@@ -91,8 +91,8 @@ public class SocketIOServer implements ClientListeners {
      * Start server
      */
     public void start() {
-        bossGroup = new NioEventLoopGroup();
-        workerGroup = new NioEventLoopGroup();
+        bossGroup = new NioEventLoopGroup(configCopy.getBossThreads());
+        workerGroup = new NioEventLoopGroup(configCopy.getWorkerThreads());
 
         pipelineFactory.start(configCopy, namespacesHub);
         ServerBootstrap b = new ServerBootstrap();
