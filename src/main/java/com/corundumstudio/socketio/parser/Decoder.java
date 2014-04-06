@@ -209,7 +209,7 @@ public class Decoder {
                 if (jsonSupport == null) {
                     throw new NullPointerException("jsonSupport");
                 } else if (callback == null) {
-                    throw new NullPointerException("Callback");
+                    throw new NullPointerException(String.format("Could not find callback for uuid (%s) and ackId (%s)",uuid, packet.getAckId()));
                 }
                 AckArgs args = jsonSupport.readAckArgs(in, callback.getResultClass());
                 packet.setArgs(args.getArgs());
