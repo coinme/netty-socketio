@@ -151,6 +151,10 @@ public class AckManager implements Disconnectable {
                 AckCallback c = removeCallback(sessionId, index);
 
                 if (c != null) {
+                    if (c != callback) {
+                        throw new IllegalStateException("The callback1 for timeout did not match callback2. This would be a crisscrossed callback.onTimeout() call.");
+                    }
+
                     c.onTimeout();
                 }
             }
