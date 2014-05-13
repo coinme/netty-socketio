@@ -58,8 +58,18 @@ public class HeartbeatHandler implements Disconnectable {
 
     @Override
     public void onDisconnect(BaseClient client) {
-        cancelTimeout(Type.HEARBEAT_TIMEOUT, client);
-        cancelTimeout(Type.CLOSE_TIMEOUT, client);
+        synchronized (client) {
+            cancelTimeout(Type.HEARBEAT_TIMEOUT, client);
+            cancelTimeout(Type.CLOSE_TIMEOUT, client);
+
+            String heartbeatKey = getKey(Type.HEARBEAT_TIMEOUT, client.getSessionId());
+            heartbeatRunnableMap.remove(heartbeatKey);
+            schedulerKeyMap.remove(heartbeatKey);
+
+            String disconnectKey = getKey(Type.CLOSE_TIMEOUT, client.getSessionId());
+            disconnectRunnableMap.remove(disconnectKey);
+            schedulerKeyMap.remove(disconnectKey);
+        }
     }
 
     private void cancelTimeout(Type type, final BaseClient client) {
